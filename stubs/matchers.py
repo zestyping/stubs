@@ -58,7 +58,7 @@ class Matcher:
         return all(pred(x) for pred in self.predicates)
 
     def __and__(self, predicate):
-        return Matcher(*self.predicates, predicate)
+        return Matcher(*(self.predicates + (predicate,)))
 
     def __or__(self, predicate):
         return Matcher(lambda x: self(x) or predicate(x))
