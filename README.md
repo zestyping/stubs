@@ -11,3 +11,5 @@ Tools for setting up stubs and mocks in Python.  Example:
     print(f(3))  # prints 6
 
 For more details, see the docstrings in `stubs.py` and `matchers.py`.
+
+To test, run py.test.

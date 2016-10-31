@@ -60,7 +60,7 @@ You can also stub out a method on a class or an instance:
         print(bar.f(3))  # stub, prints 8
     print(foo.f(3))  # original, prints 9
 
-In the examples above, the stub is invoked regardless of any arguments or
+In all the examples above, the stub is invoked regardless of any arguments or
 keyword arguments.  You can specify expected arguments after the function:
 
     with stub[f](3) >> 5:
@@ -101,6 +101,31 @@ To raise an exception instead of returning anything, use the `^` operator
             print(f(2))  # prints 4
             print(f(1))  # prints 2
             print(f(0))  # ValueError: Zero is not allowed!
+
+When you use `|` to replace a method on a class, you should provide a function
+that takes the same arguments as in the original method definition (i.e. with
+an initial `self` argument for an instance method; an initial `cls` argument
+for a class method, or no initial `self` or `cls` argument for a static method).
+However, do not annotate your function with `@staticmethod` or `@classmethod`;
+it will be automatically converted to the same kind of method as the method
+being replaced:
+
+    class Foo:
+        def f(self, x):
+            return x * 3
+
+        @staticmethod
+        def g(x):
+            return x + 2
+
+    foo = Foo()
+    with stub[Foo.f] | (lambda self, x: x * 4):  # takes a self argument, like f
+        print(foo.f(2))  # stub, prints 8
+    print(foo.f(2))  # original, prints 6
+
+    with stub[Foo.g] | (lambda x: x + 3):  # takes no self argument, like g
+        print(foo.g(2))  # stub, prints 5
+    print(foo.g(2))  # original, prints 4
 
 When you set up a stub with `stub`, it doesn't care whether the function is
 called at all, or called many times.  Its job is just to replace the behaviour
