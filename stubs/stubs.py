@@ -102,13 +102,36 @@ To raise an exception instead of returning anything, use the `^` operator
             print(f(1))  # prints 2
             print(f(0))  # ValueError: Zero is not allowed!
 
-When you use `|` to replace a method on a class, you should provide a function
-that takes the same arguments as in the original method definition (i.e. with
-an initial `self` argument for an instance method; an initial `cls` argument
-for a class method, or no initial `self` or `cls` argument for a static method).
-However, do not annotate your function with `@staticmethod` or `@classmethod`;
-it will be automatically converted to the same kind of method as the method
-being replaced:
+When you set up a stub with `stub`, it doesn't care whether the function is
+called at all, or called many times.  The stub will just replace the function;
+it will only complain if called with arguments for which no behaviour has been
+specified.  In the last example above, the outermost context `with stub[f] | f`
+causes the stub to fall back to calling the original `f` for any arguments
+other than 0.
+
+`expect` can be used in all the same ways as `stub` above, but unlike `stub`,
+it requires exactly one call with arguments matching the specified pattern
+to occur within the `expect` context:
+
+    with stub[f](5) >> 5:
+        with expect[f](6) >> 5:
+            print(f(5))  # prints 5
+        # AssertionError: Missing expected call to f(6)
+
+When multiple `expect` contexts are present, the calls are expected to occur
+in exactly the specified order:
+
+    with expect[f](1) >> 1, expect[f](2) >> 2, expect[f](3) >> 3:
+        print(f(1))  # prints 1
+        print(f(3))  # AssertionError: Unexpected call to f(3); expecting f(2)
+
+When you use `stub` or `expect` with `|` to replace a method on a class, you
+should provide a function that takes the same arguments as in the original
+method definition (i.e. with an initial `self` argument for an instance method;
+an initial `cls` argument for a class method, or no initial `self` or `cls`
+argument for a static method).  However, do not annotate your function with
+`@staticmethod` or `@classmethod`; it will be automatically converted to the
+same kind of method as the method being replaced:
 
     class Foo:
         def f(self, x):
@@ -126,29 +149,6 @@ being replaced:
     with stub[Foo.g] | (lambda x: x + 3):  # takes no self argument, like g
         print(foo.g(2))  # stub, prints 5
     print(foo.g(2))  # original, prints 4
-
-When you set up a stub with `stub`, it doesn't care whether the function is
-called at all, or called many times.  Its job is just to replace the behaviour
-of the function; it will only complain if the stub is called with arguments
-for which no behaviour has been specified.  In the last example above, the
-outermost context `with stub[f] | f` causes the stub to fall back to calling
-the original `f` for any arguments other than 0.
-
-`expect` can be used in all the same ways as `stub` above, but unlike `stub`,
-it requires exactly one call with arguments matching the specified pattern
-to occur within the `expect` context:
-
-    with stub[f](5) >> 5:
-        with expect[f](6) >> 5:
-            print(f(5))  # prints 5
-        # AssertionError: Missing expected call to f(6)
-
-When multiple `expect` contexts are present, the calls are expected to occur
-in exactly the specified order:
-
-    with expect[f](1) >> 1, expect[f](2) >> 2, expect[f](3) >> 3:
-        print(f(1))  # prints 1
-        print(f(3))  # AssertionError: Unexpected call to f(3); expecting f(2)
 """
 
 import inspect
